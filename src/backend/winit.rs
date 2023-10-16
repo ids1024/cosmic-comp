@@ -51,6 +51,8 @@ pub struct WinitState {
 
 impl WinitState {
     pub fn render_output(&mut self, state: &mut Common) -> Result<()> {
+        println!("Render output");
+
         self.backend
             .bind()
             .with_context(|| "Failed to bind buffer")?;

@@ -16,7 +16,7 @@ use crate::{
         focus::target::WindowGroup, grabs::SeatMoveGrabState, layout::tiling::ANIMATION_DURATION,
         CosmicMapped, CosmicMappedRenderElement, OverviewMode, Trigger, WorkspaceRenderElement,
     },
-    state::{Common, Fps},
+    state::{Common, Fps, SessionLock},
     utils::prelude::{OutputExt, SeatExt},
     wayland::{
         handlers::{
@@ -42,7 +42,7 @@ use smithay::{
             buffer_dimensions,
             damage::{Error as RenderError, OutputDamageTracker, RenderOutputResult},
             element::{
-                surface::render_elements_from_surface_tree,
+                surface::{render_elements_from_surface_tree, WaylandSurfaceRenderElement},
                 utils::{Relocate, RelocateRenderElement},
                 Element, Id, Kind, RenderElement,
             },
@@ -816,10 +816,8 @@ where
     WorkspaceRenderElement<R>: RenderElement<R>,
     Source: Clone,
 {
-    // TODO: if session locked, render that. surface.
     if let Some(session_lock) = &state.session_lock {
-        if let Some(surface) = session_lock.surfaces.get(output) {
-        }
+        return render_session_lock(renderer, target, damage_tracker, age, output, session_lock);
     }
 
     let (previous_workspace, workspace) = state.shell.workspaces.active(output);
@@ -846,6 +844,36 @@ where
     );
 
     result
+}
+
+pub fn render_session_lock<R, Target>(
+    renderer: &mut R,
+    target: Target,
+    damage_tracker: &mut OutputDamageTracker,
+    age: usize,
+    output: &Output,
+    session_lock: &SessionLock,
+) -> Result<RenderOutputResult, RenderError<R>>
+where
+    R: Renderer + ImportAll + Bind<Target>,
+    <R as Renderer>::TextureId: Clone + 'static,
+{
+    let mut elements: Vec<WaylandSurfaceRenderElement<R>> = Vec::new();
+
+    if let Some(surface) = session_lock.surfaces.get(output) {
+        let scale = Scale::from(output.current_scale().fractional_scale());
+        elements.extend(render_elements_from_surface_tree(
+            renderer,
+            surface.wl_surface(),
+            (0, 0),
+            scale,
+            1.0,
+            Kind::Unspecified,
+        ));
+    }
+
+    renderer.bind(target).map_err(RenderError::Rendering)?;
+    damage_tracker.render_output(renderer, age, &elements, CLEAR_COLOR)
 }
 
 pub fn render_workspace<R, Target, OffTarget, Source>(

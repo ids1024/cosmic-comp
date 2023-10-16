@@ -3896,6 +3896,7 @@ checksum = "942b4a808e05215192e39f4ab80813e599068285906cc91aa64f923db842bd5a"
 [[package]]
 name = "smithay"
 version = "0.3.0"
+source = "git+https://github.com/YaLTeR/smithay?branch=session-lock#2c634940a5601dccfa7bf1939ad6f3c7664bcba7"
 dependencies = [
  "appendlist",
  "ash",

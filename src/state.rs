@@ -70,7 +70,7 @@ use smithay::{
         seat::WaylandFocus,
         security_context::{SecurityContext, SecurityContextState},
         selection::{data_device::DataDeviceState, primary_selection::PrimarySelectionState},
-        session_lock::{surface::LockSurface, SessionLocker, SessionLockManagerState},
+        session_lock::{LockSurface, SessionLockManagerState, SessionLocker},
         shell::{kde::decoration::KdeDecorationState, xdg::decoration::XdgDecorationState},
         shm::ShmState,
         viewporter::ViewporterState,
@@ -80,7 +80,10 @@ use smithay::{
 use tracing::error;
 
 use std::{cell::RefCell, ffi::OsString, time::Duration};
-use std::{collections::{HashMap, VecDeque}, time::Instant};
+use std::{
+    collections::{HashMap, VecDeque},
+    time::Instant,
+};
 
 #[derive(RustEmbed)]
 #[folder = "resources/i18n"]
@@ -317,7 +320,8 @@ impl State {
         let wl_drm_state = WlDrmState;
         let kde_decoration_state = KdeDecorationState::new::<Self>(&dh, Mode::Client);
         let xdg_decoration_state = XdgDecorationState::new::<Self>(&dh);
-        let session_lock_manager_state = SessionLockManagerState::new::<Self>(&dh);
+        let session_lock_manager_state =
+            SessionLockManagerState::new::<Self, _>(&dh, client_has_security_context);
         XWaylandKeyboardGrabState::new::<Self>(&dh);
         PointerConstraintsState::new::<Self>(&dh);
         PointerGesturesState::new::<Self>(&dh);
