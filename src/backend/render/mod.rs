@@ -816,6 +816,12 @@ where
     WorkspaceRenderElement<R>: RenderElement<R>,
     Source: Clone,
 {
+    // TODO: if session locked, render that. surface.
+    if let Some(session_lock) = &state.session_lock {
+        if let Some(surface) = session_lock.surfaces.get(output) {
+        }
+    }
+
     let (previous_workspace, workspace) = state.shell.workspaces.active(output);
     let (previous_idx, idx) = state.shell.workspaces.active_num(output);
     let previous_workspace = previous_workspace

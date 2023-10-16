@@ -260,6 +260,7 @@ impl State {
 
                     let current_output = seat.active_output();
                     let workspace = self.common.shell.active_space_mut(&current_output);
+                    // TODO handle session lock
                     let shortcuts_inhibited = workspace
                         .focus_stack
                         .get(&seat)
@@ -279,6 +280,7 @@ impl State {
                     let serial = SERIAL_COUNTER.next_serial();
                     let time = Event::time_msec(&event);
                     let keyboard = seat.get_keyboard().unwrap();
+                    // XXX should return lock surface?
                     let current_focus = keyboard.current_focus();
                     if let Some((action, pattern)) = keyboard
                             .input(

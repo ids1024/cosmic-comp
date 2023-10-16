@@ -53,7 +53,7 @@ use smithay::{
         wayland_protocols_misc::server_decoration::server::org_kde_kwin_server_decoration_manager::Mode,
         wayland_server::{
             backend::{ClientData, ClientId, DisconnectReason},
-            protocol::wl_shm,
+            protocol::{wl_output, wl_shm},
             Client, DisplayHandle,
         },
     },
@@ -70,6 +70,7 @@ use smithay::{
         seat::WaylandFocus,
         security_context::{SecurityContext, SecurityContextState},
         selection::{data_device::DataDeviceState, primary_selection::PrimarySelectionState},
+        session_lock::{surface::LockSurface, SessionLocker, SessionLockManagerState},
         shell::{kde::decoration::KdeDecorationState, xdg::decoration::XdgDecorationState},
         shm::ShmState,
         viewporter::ViewporterState,
@@ -79,7 +80,7 @@ use smithay::{
 use tracing::error;
 
 use std::{cell::RefCell, ffi::OsString, time::Duration};
-use std::{collections::VecDeque, time::Instant};
+use std::{collections::{HashMap, VecDeque}, time::Instant};
 
 #[derive(RustEmbed)]
 #[folder = "resources/i18n"]
@@ -152,11 +153,14 @@ pub struct Common {
     pub primary_selection_state: PrimarySelectionState,
     pub screencopy_state: ScreencopyState,
     pub seat_state: SeatState<State>,
+    pub session_lock_manager_state: SessionLockManagerState,
     pub shm_state: ShmState,
     pub wl_drm_state: WlDrmState,
     pub viewporter_state: ViewporterState,
     pub kde_decoration_state: KdeDecorationState,
     pub xdg_decoration_state: XdgDecorationState,
+
+    pub session_lock: Option<SessionLock>,
 
     // xwayland state
     pub xwayland_state: Option<XWaylandState>,
@@ -176,6 +180,12 @@ pub enum BackendData {
 pub struct SurfaceDmabufFeedback {
     pub render_feedback: DmabufFeedback,
     pub scanout_feedback: DmabufFeedback,
+}
+
+#[derive(Debug)]
+pub struct SessionLock {
+    //pub locker: SessionLocker,
+    pub surfaces: HashMap<Output, LockSurface>,
 }
 
 impl BackendData {
@@ -307,6 +317,7 @@ impl State {
         let wl_drm_state = WlDrmState;
         let kde_decoration_state = KdeDecorationState::new::<Self>(&dh, Mode::Client);
         let xdg_decoration_state = XdgDecorationState::new::<Self>(&dh);
+        let session_lock_manager_state = SessionLockManagerState::new::<Self>(&dh);
         XWaylandKeyboardGrabState::new::<Self>(&dh);
         PointerConstraintsState::new::<Self>(&dh);
         PointerGesturesState::new::<Self>(&dh);
@@ -346,6 +357,7 @@ impl State {
                 screencopy_state,
                 shm_state,
                 seat_state,
+                session_lock_manager_state,
                 keyboard_shortcuts_inhibit_state,
                 output_state,
                 output_configuration_state,
@@ -355,6 +367,8 @@ impl State {
                 wl_drm_state,
                 kde_decoration_state,
                 xdg_decoration_state,
+
+                session_lock: None,
 
                 xwayland_state: None,
             },
