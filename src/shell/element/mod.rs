@@ -5,6 +5,8 @@ use crate::{
 };
 use calloop::LoopHandle;
 use id_tree::NodeId;
+use smithay::backend::renderer::gles::GlesTexture;
+use smithay::backend::renderer::Offscreen;
 use smithay::{
     backend::{
         input::KeyState,
@@ -653,7 +655,7 @@ impl CosmicMapped {
         alpha: f32,
     ) -> Vec<C>
     where
-        R: Renderer + ImportAll + ImportMem + AsGlowRenderer,
+        R: Renderer + ImportAll + ImportMem + AsGlowRenderer + Offscreen<GlesTexture>,
         R::TextureId: Send + Clone + 'static,
         CosmicMappedRenderElement<R>: RenderElement<R>,
         C: From<CosmicMappedRenderElement<R>>,

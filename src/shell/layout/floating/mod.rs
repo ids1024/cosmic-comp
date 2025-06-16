@@ -8,6 +8,8 @@ use std::{
 
 use cosmic_settings_config::shortcuts::action::ResizeDirection;
 use keyframe::{ease, functions::EaseInOutCubic};
+use smithay::backend::renderer::gles::GlesTexture;
+use smithay::backend::renderer::Offscreen;
 use smithay::{
     backend::renderer::{
         element::{
@@ -1440,7 +1442,7 @@ impl FloatingLayout {
         theme: &cosmic::theme::CosmicTheme,
     ) -> Vec<CosmicMappedRenderElement<R>>
     where
-        R: Renderer + ImportAll + ImportMem + AsGlowRenderer,
+        R: Renderer + ImportAll + ImportMem + AsGlowRenderer + Offscreen<GlesTexture>,
         R::TextureId: Send + Clone + 'static,
         CosmicMappedRenderElement<R>: RenderElement<R>,
         CosmicWindowRenderElement<R>: RenderElement<R>,

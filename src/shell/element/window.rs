@@ -13,13 +13,16 @@ use crate::{
 };
 use calloop::LoopHandle;
 use cosmic::iced::{Color, Task};
+use smithay::backend::allocator::Fourcc;
 use smithay::backend::renderer::element::Element;
 use smithay::backend::renderer::element::Id;
 use smithay::backend::renderer::element::Kind;
 use smithay::backend::renderer::element::RenderElement;
+use smithay::backend::renderer::gles::GlesTexture;
 use smithay::backend::renderer::glow::GlowRenderer;
 use smithay::backend::renderer::utils::CommitCounter;
 use smithay::backend::renderer::utils::OpaqueRegions;
+use smithay::backend::renderer::Offscreen;
 use smithay::utils::Buffer;
 use smithay::{
     backend::{
@@ -362,7 +365,7 @@ impl CosmicWindow {
         alpha: f32,
     ) -> Vec<C>
     where
-        R: Renderer + ImportAll + ImportMem,
+        R: Renderer + ImportAll + ImportMem + Offscreen<GlesTexture>,
         R::TextureId: Send + Clone + 'static,
         C: From<CosmicWindowRenderElement<R>>,
     {
@@ -392,6 +395,12 @@ impl CosmicWindow {
                 CosmicWindowRenderElement<R>,
             >(&self.0, renderer, ssd_loc, scale, alpha))
         }
+
+        // XXX size, format
+        let mut texture =
+            Offscreen::<GlesTexture>::create_buffer(renderer, Fourcc::Abgr8888, Size::new(1, 1))
+                .unwrap();
+        let target = renderer.bind(&mut texture);
 
         elements.into_iter().map(C::from).collect()
     }

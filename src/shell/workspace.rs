@@ -25,6 +25,7 @@ use cosmic_protocols::workspace::v2::server::zcosmic_workspace_handle_v2::Tiling
 use id_tree::Tree;
 use indexmap::IndexSet;
 use keyframe::{ease, functions::EaseInOutCubic};
+use smithay::backend::renderer::Offscreen;
 use smithay::{
     backend::renderer::{
         element::{
@@ -1279,7 +1280,7 @@ impl Workspace {
         theme: &CosmicTheme,
     ) -> Result<Vec<WorkspaceRenderElement<R>>, OutputNotMapped>
     where
-        R: Renderer + ImportAll + ImportMem + AsGlowRenderer,
+        R: Renderer + ImportAll + ImportMem + AsGlowRenderer + Offscreen<GlesTexture>,
         R::TextureId: Send + Clone + 'static,
         CosmicMappedRenderElement<R>: RenderElement<R>,
         CosmicWindowRenderElement<R>: RenderElement<R>,

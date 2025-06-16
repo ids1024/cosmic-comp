@@ -19,6 +19,8 @@ use crate::{
 
 use calloop::LoopHandle;
 use cosmic::theme::CosmicTheme;
+use smithay::backend::renderer::gles::GlesTexture;
+use smithay::backend::renderer::Offscreen;
 use smithay::{
     backend::{
         input::ButtonState,
@@ -70,7 +72,7 @@ impl MoveGrabState {
     #[profiling::function]
     pub fn render<I, R>(&self, renderer: &mut R, output: &Output, theme: &CosmicTheme) -> Vec<I>
     where
-        R: Renderer + ImportAll + ImportMem + AsGlowRenderer,
+        R: Renderer + ImportAll + ImportMem + AsGlowRenderer + Offscreen<GlesTexture>,
         R::TextureId: Send + Clone + 'static,
         CosmicMappedRenderElement<R>: RenderElement<R>,
         I: From<CosmicMappedRenderElement<R>>,

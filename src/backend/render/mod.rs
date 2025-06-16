@@ -424,7 +424,7 @@ pub fn cursor_elements<'a, 'frame, R>(
     exclude_dnd_icon: bool,
 ) -> Vec<CosmicElement<R>>
 where
-    R: Renderer + ImportAll + ImportMem + AsGlowRenderer,
+    R: Renderer + ImportAll + ImportMem + AsGlowRenderer + Offscreen<GlesTexture>,
     R::TextureId: Send + Clone + 'static,
     CosmicMappedRenderElement<R>: RenderElement<R>,
 {
@@ -566,7 +566,7 @@ pub fn output_elements<R>(
     _fps: Option<(&EguiState, &Timings)>,
 ) -> Result<Vec<CosmicElement<R>>, RenderError<R::Error>>
 where
-    R: Renderer + ImportAll + ImportMem + AsGlowRenderer,
+    R: Renderer + ImportAll + ImportMem + AsGlowRenderer + Offscreen<GlesTexture>,
     R::TextureId: Send + Clone + 'static,
     R::Error: FromGlesError,
     CosmicMappedRenderElement<R>: RenderElement<R>,
@@ -662,7 +662,7 @@ pub fn workspace_elements<R>(
     element_filter: ElementFilter,
 ) -> Result<Vec<CosmicElement<R>>, RenderError<R::Error>>
 where
-    R: Renderer + ImportAll + ImportMem + AsGlowRenderer,
+    R: Renderer + ImportAll + ImportMem + AsGlowRenderer + Offscreen<GlesTexture>,
     R::TextureId: Send + Clone + 'static,
     R::Error: FromGlesError,
     CosmicMappedRenderElement<R>: RenderElement<R>,
@@ -1449,7 +1449,13 @@ pub fn render_workspace<'d, R>(
     element_filter: ElementFilter,
 ) -> Result<(RenderOutputResult<'d>, Vec<CosmicElement<R>>), RenderError<R::Error>>
 where
-    R: Renderer + ImportAll + ImportMem + ExportMem + Bind<Dmabuf> + AsGlowRenderer,
+    R: Renderer
+        + ImportAll
+        + ImportMem
+        + ExportMem
+        + Bind<Dmabuf>
+        + AsGlowRenderer
+        + Offscreen<GlesTexture>,
     R::TextureId: Send + Clone + 'static,
     R::Error: FromGlesError,
     CosmicElement<R>: RenderElement<R>,

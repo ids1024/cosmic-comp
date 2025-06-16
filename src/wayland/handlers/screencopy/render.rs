@@ -1,3 +1,4 @@
+use smithay::backend::renderer::gles::GlesTexture;
 use smithay::{
     backend::{
         allocator::{dmabuf::Dmabuf, format::get_transparent, Buffer, Fourcc},
@@ -250,7 +251,14 @@ pub fn render_workspace_to_buffer(
         handle: (WorkspaceHandle, usize),
     ) -> Result<RenderOutputResult<'d>, DTError<R::Error>>
     where
-        R: Renderer + ImportAll + ImportMem + ExportMem + Bind<Dmabuf> + Blit + AsGlowRenderer,
+        R: Renderer
+            + ImportAll
+            + ImportMem
+            + ExportMem
+            + Bind<Dmabuf>
+            + Blit
+            + AsGlowRenderer
+            + Offscreen<GlesTexture>,
         R::TextureId: Send + Clone + 'static,
         R::Error: FromGlesError,
         CosmicElement<R>: RenderElement<R>,
