@@ -14,6 +14,8 @@ use crate::{
 use calloop::LoopHandle;
 use cosmic::iced::{Color, Task};
 use smithay::backend::allocator::Fourcc;
+use smithay::backend::renderer::element::texture::TextureRenderBuffer;
+use smithay::backend::renderer::element::texture::TextureRenderElement;
 use smithay::backend::renderer::element::Element;
 use smithay::backend::renderer::element::Id;
 use smithay::backend::renderer::element::Kind;
@@ -365,7 +367,7 @@ impl CosmicWindow {
         alpha: f32,
     ) -> Vec<C>
     where
-        R: Renderer + ImportAll + ImportMem + Offscreen<GlesTexture>,
+        R: Renderer + ImportAll + ImportMem + Offscreen<GlesTexture> + AsGlowRenderer,
         R::TextureId: Send + Clone + 'static,
         C: From<CosmicWindowRenderElement<R>>,
     {
@@ -401,6 +403,26 @@ impl CosmicWindow {
             Offscreen::<GlesTexture>::create_buffer(renderer, Fourcc::Abgr8888, Size::new(1, 1))
                 .unwrap();
         let target = renderer.bind(&mut texture);
+        drop(target);
+        // XXX scale?
+        let texture_buffer = TextureRenderBuffer::from_texture(
+            renderer.glow_renderer(),
+            texture,
+            1,
+            smithay::utils::Transform::Normal,
+            None,
+        );
+        let texture_element = TextureRenderElement::from_texture_render_buffer(
+            location.to_f64(),
+            &texture_buffer,
+            None,
+            None,
+            None,
+            Kind::Unspecified,
+        );
+        // TODO add uniforms
+        let texture_shader_element = TextureShaderElement::new(texture_element, todo!(), vec![]);
+        return vec![CosmicWindowRenderElement::Postproc(texture_shader_element).into()];
 
         elements.into_iter().map(C::from).collect()
     }
