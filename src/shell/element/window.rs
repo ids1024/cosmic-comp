@@ -1,5 +1,6 @@
+use crate::shell::element::FromGlesError;
 use crate::{
-    backend::render::cursor::CursorState,
+    backend::render::{cursor::CursorState, element::AsGlowRenderer},
     shell::{
         focus::target::PointerFocusTarget,
         grabs::{ReleaseMode, ResizeEdge},
@@ -12,6 +13,14 @@ use crate::{
 };
 use calloop::LoopHandle;
 use cosmic::iced::{Color, Task};
+use smithay::backend::renderer::element::Element;
+use smithay::backend::renderer::element::Id;
+use smithay::backend::renderer::element::Kind;
+use smithay::backend::renderer::element::RenderElement;
+use smithay::backend::renderer::glow::GlowRenderer;
+use smithay::backend::renderer::utils::CommitCounter;
+use smithay::backend::renderer::utils::OpaqueRegions;
+use smithay::utils::Buffer;
 use smithay::{
     backend::{
         input::KeyState,
@@ -20,6 +29,7 @@ use smithay::{
                 memory::MemoryRenderBufferRenderElement, surface::WaylandSurfaceRenderElement,
                 AsRenderElements,
             },
+            gles::element::TextureShaderElement,
             ImportAll, ImportMem, Renderer,
         },
     },
@@ -938,8 +948,120 @@ impl WaylandFocus for CosmicWindow {
     }
 }
 
+/*
+// TODO composite
 render_elements! {
     pub CosmicWindowRenderElement<R> where R: ImportAll + ImportMem;
     Header = MemoryRenderBufferRenderElement<R>,
     Window = WaylandSurfaceRenderElement<R>,
+    Postproc = TextureShaderElement,
+}
+*/
+
+pub enum CosmicWindowRenderElement<R>
+where
+    R: Renderer + ImportAll + ImportMem,
+    R::TextureId: 'static,
+{
+    Header(MemoryRenderBufferRenderElement<R>),
+    Window(WaylandSurfaceRenderElement<R>),
+    Postproc(TextureShaderElement),
+}
+
+impl<R> CosmicWindowRenderElement<R>
+where
+    R: Renderer + ImportAll + ImportMem,
+    R::TextureId: 'static,
+{
+    fn inner_element(&self) -> &dyn Element {
+        match self {
+            Self::Header(header) => header,
+            Self::Window(window) => window,
+            Self::Postproc(postproc) => postproc,
+        }
+    }
+}
+
+impl<R> Element for CosmicWindowRenderElement<R>
+where
+    R: Renderer + ImportAll + ImportMem,
+    R::TextureId: 'static,
+{
+    fn id(&self) -> &Id {
+        self.inner_element().id()
+    }
+
+    fn current_commit(&self) -> CommitCounter {
+        self.inner_element().current_commit()
+    }
+
+    fn src(&self) -> Rectangle<f64, Buffer> {
+        self.inner_element().src()
+    }
+
+    fn geometry(&self, scale: Scale<f64>) -> Rectangle<i32, Physical> {
+        self.inner_element().geometry(scale)
+    }
+
+    fn opaque_regions(&self, scale: Scale<f64>) -> OpaqueRegions<i32, Physical> {
+        self.inner_element().opaque_regions(scale)
+    }
+
+    fn alpha(&self) -> f32 {
+        self.inner_element().alpha()
+    }
+
+    fn kind(&self) -> Kind {
+        self.inner_element().kind()
+    }
+}
+
+impl<R> RenderElement<R> for CosmicWindowRenderElement<R>
+where
+    R: Renderer + ImportAll + ImportMem + AsGlowRenderer,
+    R::TextureId: 'static,
+    R::Error: FromGlesError,
+{
+    fn draw(
+        &self,
+        frame: &mut R::Frame<'_, '_>,
+        src: Rectangle<f64, Buffer>,
+        dst: Rectangle<i32, Physical>,
+        damage: &[Rectangle<i32, Physical>],
+        opaque_regions: &[Rectangle<i32, Physical>],
+    ) -> Result<(), R::Error> {
+        match self {
+            Self::Header(header) => header.draw(frame, src, dst, damage, opaque_regions),
+            Self::Window(window) => window.draw(frame, src, dst, damage, opaque_regions),
+            Self::Postproc(postproc) => RenderElement::<GlowRenderer>::draw(
+                postproc,
+                R::glow_frame_mut(frame),
+                src,
+                dst,
+                damage,
+                opaque_regions,
+            )
+            .map_err(FromGlesError::from_gles_error),
+        }
+    }
+}
+
+impl<R> From<WaylandSurfaceRenderElement<R>> for CosmicWindowRenderElement<R>
+where
+    R: Renderer + ImportAll + ImportMem,
+    R::TextureId: 'static,
+{
+    fn from(element: WaylandSurfaceRenderElement<R>) -> Self {
+        Self::Window(element)
+    }
+}
+
+impl<R> From<MemoryRenderBufferRenderElement<R>> for CosmicWindowRenderElement<R>
+where
+    R: Renderer + ImportAll + ImportMem,
+    R::TextureId: 'static,
+{
+    fn from(element: MemoryRenderBufferRenderElement<R>) -> Self {
+        Self::Header(element)
+    }
 }
