@@ -610,6 +610,21 @@ where
             workspace.tiling = state;
         }
     }
+
+    pub fn set_id(&mut self, workspace: &WorkspaceHandle, id: &str) -> Result<(), ()> {
+        if let Some(workspace) = self
+            .0
+            .groups
+            .iter_mut()
+            .find_map(|g| g.workspaces.iter_mut().find(|w| w.id == workspace.id))
+        {
+            if workspace.ext_id.is_some() {
+                return Err(());
+            }
+            workspace.ext_id = Some(id.to_owned());
+        }
+        Ok(())
+    }
 }
 
 impl<'a, D> Drop for WorkspaceUpdateGuard<'a, D>

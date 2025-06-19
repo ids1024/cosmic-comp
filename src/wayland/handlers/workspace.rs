@@ -61,6 +61,7 @@ impl WorkspaceHandler for State {
                         workspace.pinned = pinned;
                         let mut update = self.common.workspace_state.update();
                         if pinned {
+                            // add id
                             update.add_workspace_state(&workspace.handle, WState::Pinned);
                             // TODO: Also need to update on changing other properties that are saved
                             shell.workspaces.persist(&self.common.config);

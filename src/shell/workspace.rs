@@ -110,6 +110,7 @@ pub struct Workspace {
     pub tiling_enabled: bool,
     pub fullscreen: Option<FullscreenSurface>,
     pub pinned: bool,
+    pub id: Option<String>,
 
     pub handle: WorkspaceHandle,
     pub focus_stack: FocusStacks,
@@ -280,6 +281,7 @@ impl Workspace {
             minimized_windows: Vec::new(),
             fullscreen: None,
             pinned: false,
+            id: None,
             handle,
             focus_stack: FocusStacks::default(),
             screencopy: ScreencopySessions::default(),
@@ -311,6 +313,7 @@ impl Workspace {
             minimized_windows: Vec::new(),
             fullscreen: None,
             pinned: true,
+            id: pinned.id.clone(),
             handle,
             focus_stack: FocusStacks::default(),
             screencopy: ScreencopySessions::default(),
@@ -336,6 +339,7 @@ impl Workspace {
                     edid: output.edid,
                 },
                 tiling_enabled: self.tiling_enabled,
+                id: self.id.clone(), // TODO should always be Some?
             })
         } else {
             None
