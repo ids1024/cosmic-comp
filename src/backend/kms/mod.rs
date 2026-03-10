@@ -192,6 +192,7 @@ fn init_libinput(
     let libinput_backend = LibinputInputBackend::new(libinput_context.clone());
 
     evlh.insert_source(libinput_backend, move |mut event, _, state| {
+        // TODO DeviceAdded; only for libinput
         if let InputEvent::DeviceAdded { device } = &mut event {
             state.common.config.read_device(device);
             state

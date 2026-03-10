@@ -168,6 +168,7 @@ impl State {
 
         use smithay::backend::input::Event;
         match event {
+            // TODO DeviceAdded
             InputEvent::DeviceAdded { device } => {
                 let shell = self.common.shell.read();
                 let seat = shell.seats.last_active();

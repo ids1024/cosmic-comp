@@ -19,7 +19,7 @@ use smithay::{
     output::Output,
     reexports::{input::Device as InputDevice, wayland_server::DisplayHandle},
     utils::{Buffer, IsAlive, Monotonic, Point, Rectangle, Serial, Time, Transform},
-    wayland::compositor::with_states,
+    wayland::compositor::{add_post_commit_hook, with_states},
 };
 use tracing::warn;
 
@@ -91,6 +91,7 @@ impl Seats {
 impl Devices {
     pub fn add_device<D: Device + 'static>(
         &self,
+        // TODO add id for backend instance?
         device: &D,
         led_state: LedState,
     ) -> Vec<DeviceCapability> {
@@ -123,10 +124,12 @@ impl Devices {
         new_caps
     }
 
+    // XXX well, need to match on both backend and id?
     pub fn has_device<D: Device>(&self, device: &D) -> bool {
         self.capabilities.borrow().contains_key(&device.id())
     }
 
+    // XXX well, need to match on both backend and id?
     pub fn remove_device<D: Device>(&self, device: &D) -> Vec<DeviceCapability> {
         let id = device.id();
 
@@ -395,6 +398,16 @@ impl SeatExt for Seat<State> {
 
     fn set_cursor_image_status(&self, status: CursorImageStatus) {
         let cursor_status = self.user_data().get::<Mutex<CursorImageStatus>>().unwrap();
+        if let CursorImageStatus::Surface(surface) = &status {
+            let seat = self.clone(); // TODO weak?
+            use crate::wayland::handlers::image_copy_capture::render_cursor_to_buffer;
+            add_post_commit_hook::<State, _>(surface, move |state, _dh, _surface| {
+                use crate::wayland::handlers::image_copy_capture::CursorFrameHolder;
+                for (session, frame) in seat.take_pending_cursor_frames() {
+                    render_cursor_to_buffer(state, &session, frame, &seat);
+                }
+            });
+        }
         *cursor_status.lock().unwrap() = status;
     }
 }
